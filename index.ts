@@ -10,10 +10,10 @@ export class MyProvider extends BaseProvider {
     readonly name = 'Omega Stream Provider';
     readonly enabled = true;
 
-    readonly BASE_URL = 'https://vidsrc.xyz';
+    readonly BASE_URL = 'https://vidsrc.cc';
     readonly HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        Referer: 'https://vidsrc.xyz'
+        Referer: 'https://vidsrc.cc'
     };
 
     readonly capabilities: ProviderCapabilities = {
@@ -22,7 +22,6 @@ export class MyProvider extends BaseProvider {
 
     async getMovieSources(media: ProviderMediaObject): Promise<ProviderResult> {
         try {
-            // Extracting TMDB ID from media object
             const tmdbId = media.id || media.tmdbId;
             const contentType = media.type || 'movie';
 
@@ -30,9 +29,9 @@ export class MyProvider extends BaseProvider {
                 throw new Error('Media ID (TMDB) is missing');
             }
 
-            // Constructing robust streaming links with Hindi audio support
-            const primaryUrl = `https://vidsrc.xyz/embed/${contentType}/${tmdbId}?audio=hi`;
-            const fallbackUrl = `https://vidsrc.to/embed/${contentType}/${tmdbId}?lang=hi`;
+            // Updated reliable embed endpoints
+            const primaryUrl = `https://vidsrc.cc/v2/embed/${contentType}/${tmdbId}?sub=hi&audio=hi`;
+            const fallbackUrl = `https://embed.su/embed/${contentType}/${tmdbId}`;
 
             return {
                 sources: [
@@ -79,7 +78,7 @@ export class MyProvider extends BaseProvider {
             const response = await fetch(this.BASE_URL, { method: 'HEAD' });
             return response.ok;
         } catch {
-            return true; // Fallback true to keep service stable on Vercel
+            return true;
         }
     }
-                            }
+                                       }
