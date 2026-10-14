@@ -82,7 +82,7 @@
         <div class="hero-banner" id="heroContainer">
             <img id="heroImg" class="hero-img" src="" alt="">
             <div class="hero-overlay">
-                <div class="hero-title" id="heroTitle">Loading...</div>
+                <div class="hero-title" id="heroTitle">Loading movies...</div>
                 <div class="play-btn" id="heroPlayBtn">▶ Play Now</div>
             </div>
         </div>
@@ -138,37 +138,32 @@
     </div>
 
     <script>
-        var API_KEY = '27c7f2de57c52dda225a91289f4b6ae2';
-        var BASE_URL = 'https://api.themoviedb.org/3';
-        var IMG_URL = 'https://image.tmdb.org/t/p/w500';
+        const API_KEY = '27c7f2de57c52dda225a91289f4b6ae2';
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_URL = 'https://image.tmdb.org/t/p/w500';
 
-        var currentId = null;
-        var currentType = 'movie';
-        var currentTitle = '';
-        var serverNum = 1;
-        var adultMode = false;
+        let currentId = null;
+        let currentType = 'movie';
+        let currentTitle = '';
+        let serverNum = 1;
+        let adultMode = false;
 
         function fetchMovies(url) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        if(data && data.results && data.results.length > 0) {
-                            updateHero(data.results[0]);
-                            renderGrid(data.results, 'moviesGrid');
-                        }
-                    } catch(e) {}
-                }
-            };
-            xhr.send();
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if(data && data.results && data.results.length > 0) {
+                        updateHero(data.results[0]);
+                        renderGrid(data.results, 'moviesGrid');
+                    }
+                })
+                .catch(err => console.log('API Error:', err));
         }
 
         function loadTrending(el) {
             setActiveChip(el);
             document.getElementById('gridTitle').innerText = "Trending Movies";
-            var url = BASE_URL + '/trending/all/day?api_key=' + API_KEY;
+            let url = `${BASE_URL}/trending/all/day?api_key=${API_KEY}`;
             if(adultMode) url += '&include_adult=true';
             fetchMovies(url);
         }
@@ -176,7 +171,7 @@
         function loadHindi(el) {
             setActiveChip(el);
             document.getElementById('gridTitle').innerText = "Hindi Dubbed Content";
-            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_original_language=hi&sort_by=popularity.desc';
+            let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_original_language=hi&sort_by=popularity.desc`;
             if(adultMode) url += '&include_adult=true';
             fetchMovies(url);
         }
@@ -184,7 +179,7 @@
         function loadAction(el) {
             setActiveChip(el);
             document.getElementById('gridTitle').innerText = "Action Movies";
-            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_genres=28&sort_by=popularity.desc';
+            let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=28&sort_by=popularity.desc`;
             if(adultMode) url += '&include_adult=true';
             fetchMovies(url);
         }
@@ -194,7 +189,7 @@
             if(adultMode) {
                 el.className = 'cat-chip adult active';
                 document.getElementById('gridTitle').innerText = "Adult Exclusive Content";
-                fetchMovies(BASE_URL + '/discover/movie?api_key=' + API_KEY + '&include_adult=true&with_genres=10749,35&sort_by=popularity.desc');
+                fetchMovies(`${BASE_URL}/discover/movie?api_key=${API_KEY}&include_adult=true&with_genres=10749,35&sort_by=popularity.desc`);
             } else {
                 el.className = 'cat-chip adult';
                 loadTrending(document.querySelector('.cat-chip'));
@@ -202,47 +197,40 @@
         }
 
         function setActiveChip(el) {
-            var chips = document.querySelectorAll('.cat-chip');
-            for(var i=0; i<chips.length; i++) {
-                if(chips[i].className.indexOf('adult') == -1) {
-                    chips[i].className = 'cat-chip';
-                }
-            }
-            if(el && el.className.indexOf('adult') == -1) {
-                el.className = 'cat-chip active';
-            }
+            const chips = document.querySelectorAll('.cat-chip');
+            chips.forEach(c => {
+                if(!c.classList.contains('adult')) c.classList.remove('active');
+            });
+            if(el && !el.classList.contains('adult')) el.classList.add('active');
             goHome();
         }
 
         function updateHero(item) {
             if(!item) return;
-            var title = item.title || item.name;
-            var backdrop = item.backdrop_path ? IMG_URL + item.backdrop_path : (item.poster_path ? IMG_URL + item.poster_path : '');
+            const title = item.title || item.name;
+            const backdrop = item.backdrop_path ? IMG_URL + item.backdrop_path : (item.poster_path ? IMG_URL + item.poster_path : '');
             document.getElementById('heroImg').src = backdrop;
             document.getElementById('heroTitle').innerText = title;
-            document.getElementById('heroPlayBtn').onclick = function() {
-                openWatchView(item.id, item.media_type || 'movie', title);
-            };
+            document.getElementById('heroPlayBtn').onclick = () => openWatchView(item.id, item.media_type || 'movie', title);
         }
 
         function renderGrid(items, elementId) {
-            var grid = document.getElementById(elementId);
+            const grid = document.getElementById(elementId);
             grid.innerHTML = '';
-            for(var i=0; i<items.length; i++) {
-                var item = items[i];
-                if(!item.poster_path) continue;
-                var title = item.title || item.name;
-                var card = document.createElement('div');
+            items.forEach(item => {
+                if(!item.poster_path) return;
+                const title = item.title || item.name;
+                const card = document.createElement('div');
                 card.className = 'movie-card';
-                card.setAttribute('data-id', item.id);
-                card.setAttribute('data-type', item.media_type || 'movie');
-                card.setAttribute('data-title', title);
-                card.onclick = function() {
-                    openWatchView(this.getAttribute('data-id'), this.getAttribute('data-type'), this.getAttribute('data-title'));
-                };
-                card.innerHTML = '<img src="' + IMG_URL + item.poster_path + '" alt="' + title + '"><div class="movie-info"><div class="movie-name">' + title + '</div></div>';
+                card.onclick = () => openWatchView(item.id, item.media_type || 'movie', title);
+                card.innerHTML = `
+                    <img src="${IMG_URL + item.poster_path}" alt="${title}">
+                    <div class="movie-info">
+                        <div class="movie-name">${title}</div>
+                    </div>
+                `;
                 grid.appendChild(card);
-            }
+            });
         }
 
         function openWatchView(id, type, title) {
@@ -256,44 +244,39 @@
             document.getElementById('watchView').style.display = 'block';
 
             document.getElementById('watchTitle').innerText = title;
-            document.getElementById('watchMeta').innerText = currentType.toUpperCase() + ' • HD Stream';
+            document.getElementById('watchMeta').innerText = `${currentType.toUpperCase()} • HD Stream`;
 
             loadPlayer();
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             saveHistory(id, title, currentType);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', BASE_URL + '/' + currentType + '/' + currentId + '/recommendations?api_key=' + API_KEY, true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        if(data && data.results && data.results.length > 0) {
-                            renderGrid(data.results, 'recommendedGrid');
-                        }
-                    } catch(e) {}
-                }
-            };
-            xhr.send();
+            fetch(`${BASE_URL}/${currentType}/${currentId}/recommendations?api_key=${API_KEY}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data && data.results && data.results.length > 0) {
+                        renderGrid(data.results, 'recommendedGrid');
+                    }
+                })
+                .catch(err => console.log(err));
         }
 
         function loadPlayer() {
-            var iframe = document.getElementById('videoPlayer');
-            var directBtn = document.getElementById('directWatchBtn');
-            var serverIndicator = document.getElementById('serverIndicator');
-            var lang = document.getElementById('langSelect').value;
+            const iframe = document.getElementById('videoPlayer');
+            const directBtn = document.getElementById('directWatchBtn');
+            const serverIndicator = document.getElementById('serverIndicator');
+            const lang = document.getElementById('langSelect').value;
             
-            var targetUrl = '';
-            var serverName = '';
+            let targetUrl = '';
+            let serverName = '';
 
             if(serverNum === 1) {
-                targetUrl = 'https://vidsrc.cc/v2/embed/' + currentType + '/' + currentId + '?sub=' + lang + '&audio=' + lang;
+                targetUrl = `https://vidsrc.cc/v2/embed/${currentType}/${currentId}?sub=${lang}&audio=${lang}`;
                 serverName = 'Server: VidSrc CC';
             } else if(serverNum === 2) {
-                targetUrl = 'https://embed.su/embed/' + currentType + '/' + currentId;
+                targetUrl = `https://embed.su/embed/${currentType}/${currentId}`;
                 serverName = 'Server: Embed.su';
             } else {
-                targetUrl = 'https://vidsrc.to/embed/' + currentType + '/' + currentId + '?lang=' + lang;
+                targetUrl = `https://vidsrc.to/embed/${currentType}/${currentId}?lang=${lang}`;
                 serverName = 'Server: VidSrc TO';
             }
 
@@ -315,28 +298,22 @@
             document.getElementById('watchView').style.display = 'none';
             document.getElementById('historySection').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function handleSearch() {
-            var q = document.getElementById('searchInput').value;
+            const q = document.getElementById('searchInput').value;
             if(q.length > 2) {
                 goHome();
-                var url = BASE_URL + '/search/multi?api_key=' + API_KEY + '&query=' + encodeURIComponent(q);
+                let url = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(q)}`;
                 if(adultMode) url += '&include_adult=true';
-                
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState == 4 && xhr.status == 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            document.getElementById('gridTitle').innerText = "Search Results";
-                            if(data && data.results) renderGrid(data.results, 'moviesGrid');
-                        } catch(e) {}
-                    }
-                };
-                xhr.send();
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('gridTitle').innerText = "Search Results";
+                        if(data && data.results) renderGrid(data.results, 'moviesGrid');
+                    })
+                    .catch(err => console.log(err));
             } else if(q.length === 0) {
                 loadTrending(document.querySelector('.cat-chip'));
             }
@@ -344,57 +321,69 @@
 
         function fetchStudio(name, id) {
             goHome();
-            document.getElementById('gridTitle').innerText = name + ' Showcase';
-            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_companies=' + id + '&sort_by=popularity.desc';
+            document.getElementById('gridTitle').innerText = `${name} Showcase`;
+            let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_companies=${id}&sort_by=popularity.desc`;
             if(adultMode) url += '&include_adult=true';
             fetchMovies(url);
         }
 
         function saveHistory(id, title, type) {
-            var hist = [];
-            try {
-                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            } catch(e) {}
-            
-            var filtered = [];
-            for(var i=0; i<hist.length; i++) {
-                if(hist[i].id !== id) filtered.push(hist[i]);
-            }
-            filtered.unshift({ id: id, title: title, type: type, date: new Date().toLocaleDateString() });
-            localStorage.setItem('omega_history', JSON.stringify(filtered));
+            let hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            hist = hist.filter(i => i.id !== id);
+            hist.unshift({ id, title, type, date: new Date().toLocaleDateString() });
+            localStorage.setItem('omega_history', JSON.stringify(hist));
         }
 
         function renderHistory() {
-            var list = document.getElementById('historyList');
-            var hist = [];
-            try {
-                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            } catch(e) {}
-            
+            const list = document.getElementById('historyList');
+            const hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
             list.innerHTML = hist.length === 0 ? '<p style="font-size:11px; color:#808080;">No history found.</p>' : '';
-            for(var i=0; i<hist.length; i++) {
-                var item = hist[i];
-                var div = document.createElement('div');
+            hist.forEach(item => {
+                const div = document.createElement('div');
                 div.className = 'history-item';
-                div.innerHTML = '<div style="cursor:pointer; flex:1;" onclick="openWatchView(' + item.id + ', \'' + item.type + '\', \'' + item.title + '\')"><div style="font-size:11px; font-weight:bold;">' + item.title + '</div><div style="font-size:9px; color:#808080;">' + item.type.toUpperCase() + ' • ' + item.date + '</div></div><button class="del-btn" onclick="deleteHistory(' + item.id + ')">Delete</button>';
+                div.innerHTML = `
+                    <div onclick="openWatchView(${item.id}, '${item.type}', '${item.title}')" style="cursor:pointer; flex:1;">
+                        <div style="font-size:11px; font-weight:bold;">${item.title}</div>
+                        <div style="font-size:9px; color:#808080;">${item.type.toUpperCase()} • ${item.date}</div>
+                    </div>
+                    <button class="del-btn" onclick="deleteHistory(${item.id})">Delete</button>
+                `;
                 list.appendChild(div);
-            }
+            });
         }
 
         function deleteHistory(id) {
-            var hist = [];
-            try {
-                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            } catch(e) {}
-            
-            var filtered = [];
-            for(var i=0; i<hist.length; i++) {
-                if(hist[i].id !== id) filtered.push(hist[i]);
-            }
-            localStorage.setItem('omega_history', JSON.stringify(filtered));
+            let hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            hist = hist.filter(i => i.id !== id);
+            localStorage.setItem('omega_history', JSON.stringify(hist));
             renderHistory();
         }
 
         function switchTab(tab, el) {
             if(el) {
-                var items 
+                document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+            }
+            if(tab === 'home') {
+                goHome();
+            } else if(tab === 'history') {
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('watchView').style.display = 'none';
+                document.getElementById('historySection').style.display = 'block';
+                renderHistory();
+            } else if(tab === 'midnight') {
+                goHome();
+                loadAction(document.querySelectorAll('.cat-chip')[3]);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firstChip = document.querySelector('.cat-chip');
+            if(firstChip) {
+                loadTrending(firstChip);
+            }
+        });
+    </script>
+</body>
+                    </html>
+                    
