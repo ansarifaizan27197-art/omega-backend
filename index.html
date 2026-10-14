@@ -10,7 +10,12 @@
 
         .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #181818; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #282828; }
         .logo { font-size: 16px; font-weight: bold; color: #e50914; cursor: pointer; }
-        .search-box input { width: 130px; background: #262626; border: 1px solid #404040; padding: 6px 10px; border-radius: 4px; color: #fff; font-size: 11px; outline: none; }
+        
+        .search-container { position: relative; }
+        .search-box input { width: 150px; background: #262626; border: 1px solid #404040; padding: 6px 10px; border-radius: 4px; color: #fff; font-size: 11px; outline: none; }
+        .search-dropdown { position: absolute; top: 32px; right: 0; width: 220px; background: #1f1f1f; border: 1px solid #333; border-radius: 4px; z-index: 200; max-height: 200px; overflow-y: auto; display: none; }
+        .search-suggestion-item { padding: 8px 10px; font-size: 11px; border-bottom: 1px solid #2a2a2a; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-suggestion-item:hover { background: #2a2a2a; }
 
         .categories { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; background: #141414; scrollbar-width: none; }
         .categories::-webkit-scrollbar { display: none; }
@@ -21,11 +26,13 @@
 
         #homeView { display: block; }
         
-        .hero-banner { width: calc(100% - 32px); height: 380px; margin: 10px 16px; border-radius: 8px; overflow: hidden; position: relative; background: #000; box-shadow: 0 6px 20px rgba(0,0,0,0.8); }
+        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 12px; padding: 10px 16px; }
+        .hero-slider::-webkit-scrollbar { display: none; }
+        .hero-banner { min-width: calc(100% - 32px); width: calc(100% - 32px); height: 350px; border-radius: 8px; overflow: hidden; position: relative; background: #000; scroll-snap-align: center; flex-shrink: 0; box-shadow: 0 6px 20px rgba(0,0,0,0.8); }
         .hero-img { width: 100%; height: 100%; object-fit: cover; }
         .hero-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 16px 16px; background: linear-gradient(transparent, rgba(20,20,20,0.98)); }
-        .hero-title { font-size: 20px; font-weight: bold; margin-bottom: 8px; color: #fff; }
-        .play-btn { background: #fff; color: #000; font-weight: bold; font-size: 12px; padding: 8px 18px; border-radius: 4px; display: inline-block; cursor: pointer; }
+        .hero-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #fff; }
+        .play-btn { background: #fff; color: #000; font-weight: bold; font-size: 11px; padding: 8px 16px; border-radius: 4px; display: inline-block; cursor: pointer; }
 
         .section-title { margin: 18px 16px 8px; font-size: 13px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
         
@@ -33,9 +40,9 @@
         .studios-row::-webkit-scrollbar { display: none; }
         .studio-btn { min-width: 90px; height: 42px; background: #222; border: 1px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; flex-shrink: 0; }
 
-        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 12px; padding: 0 16px; margin-top: 8px; }
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 0 16px; margin-top: 8px; }
         .movie-card { background: #1f1f1f; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #2a2a2a; }
-        .movie-card img { width: 100%; height: 170px; object-fit: cover; display: block; }
+        .movie-card img { width: 100%; height: 195px; object-fit: cover; display: block; }
         .movie-info { padding: 8px; }
         .movie-name { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
 
@@ -66,8 +73,11 @@
 
     <div class="navbar">
         <div class="logo" onclick="goHome()">OMEGA STREAM</div>
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search..." onkeyup="handleSearch()">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search..." oninput="handleSearchInput()" autocomplete="off">
+            </div>
+            <div id="searchDropdown" class="search-dropdown"></div>
         </div>
     </div>
 
@@ -79,20 +89,14 @@
             <div class="cat-chip" onclick="loadAction(this)">Action</div>
         </div>
 
-        <div class="hero-banner" id="heroContainer">
-            <img id="heroImg" class="hero-img" src="" alt="">
-            <div class="hero-overlay">
-                <div class="hero-title" id="heroTitle">Loading movies...</div>
-                <div class="play-btn" id="heroPlayBtn">▶ Play Now</div>
-            </div>
-        </div>
+        <div class="hero-slider" id="heroSlider"></div>
 
         <div class="section-title">Studios</div>
         <div class="studios-row">
-            <div class="studio-btn" onclick="fetchStudio('Marvel', 4203)">Marvel</div>
-            <div class="studio-btn" onclick="fetchStudio('Disney', 2)">Disney</div>
-            <div class="studio-btn" onclick="fetchStudio('Pixar', 3)">Pixar</div>
-            <div class="studio-btn" onclick="fetchStudio('Warner', 3166)">Warner</div>
+            <div class="studio-btn" onclick="fetchStudio('Marvel', 4203, true)">Marvel</div>
+            <div class="studio-btn" onclick="fetchStudio('Disney', 2, false)">Disney</div>
+            <div class="studio-btn" onclick="fetchStudio('Pixar', 3, false)">Pixar</div>
+            <div class="studio-btn" onclick="fetchStudio('Warner', 3166, false)">Warner</div>
         </div>
 
         <div class="section-title" id="gridTitle">Trending Movies</div>
@@ -152,8 +156,8 @@
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    if(data && data.results && data.results.length > 0) {
-                        updateHero(data.results[0]);
+                    if(data && data.results) {
+                        renderSlider(data.results.slice(0, 5));
                         renderGrid(data.results, 'moviesGrid');
                     }
                 })
@@ -184,6 +188,14 @@
             fetchMovies(url);
         }
 
+        function loadHorror(el) {
+            if(el) setActiveChip(el);
+            document.getElementById('gridTitle').innerText = "Midnight Horror & Thriller";
+            let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=27,53&sort_by=popularity.desc`;
+            if(adultMode) url += '&include_adult=true';
+            fetchMovies(url);
+        }
+
         function toggleAdult(el) {
             adultMode = !adultMode;
             if(adultMode) {
@@ -205,13 +217,23 @@
             goHome();
         }
 
-        function updateHero(item) {
-            if(!item) return;
-            const title = item.title || item.name;
-            const backdrop = item.backdrop_path ? IMG_URL + item.backdrop_path : (item.poster_path ? IMG_URL + item.poster_path : '');
-            document.getElementById('heroImg').src = backdrop;
-            document.getElementById('heroTitle').innerText = title;
-            document.getElementById('heroPlayBtn').onclick = () => openWatchView(item.id, item.media_type || 'movie', title);
+        function renderSlider(items) {
+            const slider = document.getElementById('heroSlider');
+            slider.innerHTML = '';
+            items.forEach(item => {
+                const title = item.title || item.name;
+                const backdrop = item.backdrop_path ? IMG_URL + item.backdrop_path : (item.poster_path ? IMG_URL + item.poster_path : '');
+                const banner = document.createElement('div');
+                banner.className = 'hero-banner';
+                banner.innerHTML = `
+                    <img class="hero-img" src="${backdrop}" alt="${title}">
+                    <div class="hero-overlay">
+                        <div class="hero-title">${title}</div>
+                        <div class="play-btn" onclick="openWatchView(${item.id}, '${item.media_type || 'movie'}', '${title.replace(/'/g, "")}')">▶ Play Now</div>
+                    </div>
+                `;
+                slider.appendChild(banner);
+            });
         }
 
         function renderGrid(items, elementId) {
@@ -222,7 +244,7 @@
                 const title = item.title || item.name;
                 const card = document.createElement('div');
                 card.className = 'movie-card';
-                card.onclick = () => openWatchView(item.id, item.media_type || 'movie', title);
+                card.onclick = () => openWatchView(item.id, item.media_type || 'movie', title.replace(/'/g, ""));
                 card.innerHTML = `
                     <img src="${IMG_URL + item.poster_path}" alt="${title}">
                     <div class="movie-info">
@@ -241,6 +263,7 @@
 
             document.getElementById('homeView').style.display = 'none';
             document.getElementById('historySection').style.display = 'none';
+            document.getElementById('searchDropdown').style.display = 'none';
             document.getElementById('watchView').style.display = 'block';
 
             document.getElementById('watchTitle').innerText = title;
@@ -297,93 +320,60 @@
         function goHome() {
             document.getElementById('watchView').style.display = 'none';
             document.getElementById('historySection').style.display = 'none';
+            document.getElementById('searchDropdown').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function handleSearch() {
+        function handleSearchInput() {
             const q = document.getElementById('searchInput').value;
-            if(q.length > 2) {
-                goHome();
+            const dropdown = document.getElementById('searchDropdown');
+            if(q.length > 1) {
                 let url = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(q)}`;
                 if(adultMode) url += '&include_adult=true';
                 fetch(url)
                     .then(res => res.json())
                     .then(data => {
-                        document.getElementById('gridTitle').innerText = "Search Results";
-                        if(data && data.results) renderGrid(data.results, 'moviesGrid');
+                        dropdown.innerHTML = '';
+                        if(data && data.results && data.results.length > 0) {
+                            dropdown.style.display = 'block';
+                            data.results.slice(0, 6).forEach(item => {
+                                const title = item.title || item.name;
+                                const div = document.createElement('div');
+                                div.className = 'search-suggestion-item';
+                                div.innerText = title;
+                                div.onclick = () => {
+                                    document.getElementById('searchInput').value = title;
+                                    dropdown.style.display = 'none';
+                                    openWatchView(item.id, item.media_type || 'movie', title.replace(/'/g, ""));
+                                };
+                                dropdown.appendChild(div);
+                            });
+                        } else {
+                            dropdown.style.display = 'none';
+                        }
                     })
                     .catch(err => console.log(err));
-            } else if(q.length === 0) {
-                loadTrending(document.querySelector('.cat-chip'));
+            } else {
+                dropdown.style.display = 'none';
             }
         }
 
-        function fetchStudio(name, id) {
+        function fetchStudio(name, id, isMarvel) {
             goHome();
             document.getElementById('gridTitle').innerText = `${name} Showcase`;
-            let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_companies=${id}&sort_by=popularity.desc`;
+            let url = '';
+            if(isMarvel) {
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_companies=4203&sort_by=popularity.desc`;
+            } else {
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_companies=${id}&sort_by=popularity.desc`;
+            }
             if(adultMode) url += '&include_adult=true';
-            fetchMovies(url);
-        }
-
-        function saveHistory(id, title, type) {
-            let hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            hist = hist.filter(i => i.id !== id);
-            hist.unshift({ id, title, type, date: new Date().toLocaleDateString() });
-            localStorage.setItem('omega_history', JSON.stringify(hist));
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            const hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            list.innerHTML = hist.length === 0 ? '<p style="font-size:11px; color:#808080;">No history found.</p>' : '';
-            hist.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <div onclick="openWatchView(${item.id}, '${item.type}', '${item.title}')" style="cursor:pointer; flex:1;">
-                        <div style="font-size:11px; font-weight:bold;">${item.title}</div>
-                        <div style="font-size:9px; color:#808080;">${item.type.toUpperCase()} • ${item.date}</div>
-                    </div>
-                    <button class="del-btn" onclick="deleteHistory(${item.id})">Delete</button>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function deleteHistory(id) {
-            let hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
-            hist = hist.filter(i => i.id !== id);
-            localStorage.setItem('omega_history', JSON.stringify(hist));
-            renderHistory();
-        }
-
-        function switchTab(tab, el) {
-            if(el) {
-                document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
-                el.classList.add('active');
-            }
-            if(tab === 'home') {
-                goHome();
-            } else if(tab === 'history') {
-                document.getElementById('homeView').style.display = 'none';
-                document.getElementById('watchView').style.display = 'none';
-                document.getElementById('historySection').style.display = 'block';
-                renderHistory();
-            } else if(tab === 'midnight') {
-                goHome();
-                loadAction(document.querySelectorAll('.cat-chip')[3]);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const firstChip = document.querySelector('.cat-chip');
-            if(firstChip) {
-                loadTrending(firstChip);
-            }
-        });
-    </script>
-</body>
-                    </html>
-                    
+            
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if(data && data.results) {
+                        let filtered = data.results;
+                        if(isMarvel) {
+                            filtered = data.results.filter(m => (m.title && m.title.toLowerCase().includes('marvel')) || (m.overview && m.overview.toLowerCase().includes('marvel')) || [299536, 299534, 99861, 284052, 49538,
