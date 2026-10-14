@@ -55,7 +55,7 @@
         .watch-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
         .server-btn { background: #e50914; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; text-decoration: none; display: inline-block; text-align: center; }
         .server-btn.secondary { background: #262626; border: 1px solid #404040; }
-        .lang-select { background: #262626; color: #fff; border: 1px solid #404040; padding: 8px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
+        .lang-select { background: #262626; color: #fff; border: 1px solid #404040; padding: 8px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; display: none; }
 
         .watch-title { font-size: 18px; font-weight: bold; margin-bottom: 6px; color: #fff; }
         .watch-meta { font-size: 11px; color: #aaa; margin-bottom: 14px; }
@@ -109,12 +109,10 @@
             <iframe id="videoPlayer" src="" allowfullscreen></iframe>
         </div>
         <div class="watch-controls">
-            <button class="server-btn secondary" onclick="switchServer()" id="serverIndicator">Server: VidSrc CC</button>
+            <button class="server-btn secondary" onclick="switchServer()" id="serverIndicator">Server: VidSrc.me</button>
             <a id="directWatchBtn" href="" target="_blank" class="server-btn">🚀 Open Direct Player</a>
-            <select class="lang-select" id="langSelect" onchange="changeLanguage()">
-                <option value="hi">🇮🇳 Hindi Audio</option>
-                <option value="ta">🌴 Tamil Audio</option>
-                <option value="en">🌐 English Audio</option>
+            <select class="lang-select" id="langSelect">
+                <option value="hi">Hindi</option>
             </select>
         </div>
         <div class="watch-title" id="watchTitle">Movie Title</div>
@@ -287,20 +285,19 @@
             const iframe = document.getElementById('videoPlayer');
             const directBtn = document.getElementById('directWatchBtn');
             const serverIndicator = document.getElementById('serverIndicator');
-            const lang = document.getElementById('langSelect').value;
             
             let targetUrl = '';
             let serverName = '';
 
             if(serverNum === 1) {
-                targetUrl = `https://vidsrc.cc/v2/embed/${currentType}/${currentId}?sub=${lang}&audio=${lang}`;
-                serverName = 'Server: VidSrc CC';
+                targetUrl = `https://vidsrc.me/embed/${currentType}?tmdb=${currentId}`;
+                serverName = 'Server: VidSrc.me';
             } else if(serverNum === 2) {
                 targetUrl = `https://embed.su/embed/${currentType}/${currentId}`;
                 serverName = 'Server: Embed.su';
             } else {
-                targetUrl = `https://vidsrc.to/embed/${currentType}/${currentId}?lang=${lang}`;
-                serverName = 'Server: VidSrc TO';
+                targetUrl = `https://vidsrc.cc/v2/embed/${currentType}/${currentId}`;
+                serverName = 'Server: VidSrc CC';
             }
 
             iframe.src = targetUrl;
@@ -376,4 +373,8 @@
                     if(data && data.results) {
                         let filtered = data.results;
                         if(isMarvel) {
-                            filtered = data.results.filter(m => (m.title && m.title.toLowerCase().includes('marvel')) || (m.overview && m.overview.toLowerCase().includes('marvel')) || [299536, 299534, 99861, 284052, 49538,
+                            filtered = data.results.filter(m => (m.title && m.title.toLowerCase().includes('marvel')) || (m.overview && m.overview.toLowerCase().includes('marvel')) || [299536, 299534, 99861, 284052, 49538, 10138, 1726, 315635, 447332, 550205].includes(m.id));
+                            if(filtered.length === 0) filtered = data.results;
+                        }
+                        renderSlider(filtered.slice(0, 5));
+                        rend
