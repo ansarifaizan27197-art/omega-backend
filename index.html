@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega Stream</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #141414; color: #fff; font-family: Arial, sans-serif; padding-bottom: 70px; }
+
+        .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #181818; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #282828; }
+        .logo { font-size: 16px; font-weight: bold; color: #e50914; cursor: pointer; }
+        .search-box input { width: 130px; background: #262626; border: 1px solid #404040; padding: 6px 10px; border-radius: 4px; color: #fff; font-size: 11px; outline: none; }
+
+        .categories { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; background: #141414; scrollbar-width: none; }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-chip { background: #262626; color: #b3b3b3; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; cursor: pointer; }
+        .cat-chip.active { background: #fff; color: #000; }
+        .cat-chip.adult { color: #ff4757; border: 1px solid #e50914; }
+        .cat-chip.adult.active { background: #e50914; color: #fff; }
+
+        #homeView { display: block; }
+        
+        .hero-banner { width: calc(100% - 32px); height: 380px; margin: 10px 16px; border-radius: 8px; overflow: hidden; position: relative; background: #000; box-shadow: 0 6px 20px rgba(0,0,0,0.8); }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 16px 16px; background: linear-gradient(transparent, rgba(20,20,20,0.98)); }
+        .hero-title { font-size: 20px; font-weight: bold; margin-bottom: 8px; color: #fff; }
+        .play-btn { background: #fff; color: #000; font-weight: bold; font-size: 12px; padding: 8px 18px; border-radius: 4px; display: inline-block; cursor: pointer; }
+
+        .section-title { margin: 18px 16px 8px; font-size: 13px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .studios-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px; scrollbar-width: none; }
+        .studios-row::-webkit-scrollbar { display: none; }
+        .studio-btn { min-width: 90px; height: 42px; background: #222; border: 1px solid #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; flex-shrink: 0; }
+
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 12px; padding: 0 16px; margin-top: 8px; }
+        .movie-card { background: #1f1f1f; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #2a2a2a; }
+        .movie-card img { width: 100%; height: 170px; object-fit: cover; display: block; }
+        .movie-info { padding: 8px; }
+        .movie-name { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+
+        #watchView { display: none; padding: 16px; }
+        .back-btn { background: #262626; color: #fff; border: 1px solid #404040; padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-bottom: 14px; display: inline-block; }
+        
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid #333; margin-bottom: 12px; }
+        .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        
+        .watch-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .server-btn { background: #e50914; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; text-decoration: none; display: inline-block; text-align: center; }
+        .server-btn.secondary { background: #262626; border: 1px solid #404040; }
+        .lang-select { background: #262626; color: #fff; border: 1px solid #404040; padding: 8px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
+
+        .watch-title { font-size: 18px; font-weight: bold; margin-bottom: 6px; color: #fff; }
+        .watch-meta { font-size: 11px; color: #aaa; margin-bottom: 14px; }
+
+        #historySection { display: none; padding: 16px; }
+        .history-item { display: flex; align-items: center; justify-content: space-between; background: #1f1f1f; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #2a2a2a; }
+        .del-btn { background: #e50914; color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #181818; border-top: 1px solid #282828; display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #808080; font-size: 10px; cursor: pointer; }
+        .nav-item.active { color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="logo" onclick="goHome()">OMEGA STREAM</div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search..." onkeyup="handleSearch()">
+        </div>
+    </div>
+
+    <div id="homeView">
+        <div class="categories">
+            <div class="cat-chip active" onclick="loadTrending(this)">Trending</div>
+            <div class="cat-chip" onclick="loadHindi(this)">Hindi Dubbed</div>
+            <div class="cat-chip adult" onclick="toggleAdult(this)" id="adultChip">18+ Adult</div>
+            <div class="cat-chip" onclick="loadAction(this)">Action</div>
+        </div>
+
+        <div class="hero-banner" id="heroContainer">
+            <img id="heroImg" class="hero-img" src="" alt="">
+            <div class="hero-overlay">
+                <div class="hero-title" id="heroTitle">Loading...</div>
+                <div class="play-btn" id="heroPlayBtn">▶ Play Now</div>
+            </div>
+        </div>
+
+        <div class="section-title">Studios</div>
+        <div class="studios-row">
+            <div class="studio-btn" onclick="fetchStudio('Marvel', 4203)">Marvel</div>
+            <div class="studio-btn" onclick="fetchStudio('Disney', 2)">Disney</div>
+            <div class="studio-btn" onclick="fetchStudio('Pixar', 3)">Pixar</div>
+            <div class="studio-btn" onclick="fetchStudio('Warner', 3166)">Warner</div>
+        </div>
+
+        <div class="section-title" id="gridTitle">Trending Movies</div>
+        <div class="movies-grid" id="moviesGrid"></div>
+    </div>
+
+    <div id="watchView">
+        <div class="back-btn" onclick="goHome()">← Back to Home</div>
+        <div class="player-container">
+            <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+        </div>
+        <div class="watch-controls">
+            <button class="server-btn secondary" onclick="switchServer()" id="serverIndicator">Server: VidSrc CC</button>
+            <a id="directWatchBtn" href="" target="_blank" class="server-btn">🚀 Open Direct Player</a>
+            <select class="lang-select" id="langSelect" onchange="changeLanguage()">
+                <option value="hi">🇮🇳 Hindi Audio</option>
+                <option value="ta">🌴 Tamil Audio</option>
+                <option value="en">🌐 English Audio</option>
+            </select>
+        </div>
+        <div class="watch-title" id="watchTitle">Movie Title</div>
+        <div class="watch-meta" id="watchMeta">Released • HD Quality</div>
+
+        <div class="section-title" style="margin-left:0; margin-top:20px;">Recommended Content</div>
+        <div class="movies-grid" id="recommendedGrid" style="padding:0;"></div>
+    </div>
+
+    <div id="historySection">
+        <div class="section-title" style="margin-left:0; margin-bottom:10px;">Watch History</div>
+        <div id="historyList"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home', this)">
+            <span>🏠 Home</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('history', this)">
+            <span>📜 History</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('midnight', this)">
+            <span>🔥 Midnight</span>
+        </div>
+    </div>
+
+    <script>
+        var API_KEY = '27c7f2de57c52dda225a91289f4b6ae2';
+        var BASE_URL = 'https://api.themoviedb.org/3';
+        var IMG_URL = 'https://image.tmdb.org/t/p/w500';
+
+        var currentId = null;
+        var currentType = 'movie';
+        var currentTitle = '';
+        var serverNum = 1;
+        var adultMode = false;
+
+        function fetchMovies(url) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if(data && data.results && data.results.length > 0) {
+                            updateHero(data.results[0]);
+                            renderGrid(data.results, 'moviesGrid');
+                        }
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        }
+
+        function loadTrending(el) {
+            setActiveChip(el);
+            document.getElementById('gridTitle').innerText = "Trending Movies";
+            var url = BASE_URL + '/trending/all/day?api_key=' + API_KEY;
+            if(adultMode) url += '&include_adult=true';
+            fetchMovies(url);
+        }
+
+        function loadHindi(el) {
+            setActiveChip(el);
+            document.getElementById('gridTitle').innerText = "Hindi Dubbed Content";
+            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_original_language=hi&sort_by=popularity.desc';
+            if(adultMode) url += '&include_adult=true';
+            fetchMovies(url);
+        }
+
+        function loadAction(el) {
+            setActiveChip(el);
+            document.getElementById('gridTitle').innerText = "Action Movies";
+            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_genres=28&sort_by=popularity.desc';
+            if(adultMode) url += '&include_adult=true';
+            fetchMovies(url);
+        }
+
+        function toggleAdult(el) {
+            adultMode = !adultMode;
+            if(adultMode) {
+                el.className = 'cat-chip adult active';
+                document.getElementById('gridTitle').innerText = "Adult Exclusive Content";
+                fetchMovies(BASE_URL + '/discover/movie?api_key=' + API_KEY + '&include_adult=true&with_genres=10749,35&sort_by=popularity.desc');
+            } else {
+                el.className = 'cat-chip adult';
+                loadTrending(document.querySelector('.cat-chip'));
+            }
+        }
+
+        function setActiveChip(el) {
+            var chips = document.querySelectorAll('.cat-chip');
+            for(var i=0; i<chips.length; i++) {
+                if(chips[i].className.indexOf('adult') == -1) {
+                    chips[i].className = 'cat-chip';
+                }
+            }
+            if(el && el.className.indexOf('adult') == -1) {
+                el.className = 'cat-chip active';
+            }
+            goHome();
+        }
+
+        function updateHero(item) {
+            if(!item) return;
+            var title = item.title || item.name;
+            var backdrop = item.backdrop_path ? IMG_URL + item.backdrop_path : (item.poster_path ? IMG_URL + item.poster_path : '');
+            document.getElementById('heroImg').src = backdrop;
+            document.getElementById('heroTitle').innerText = title;
+            document.getElementById('heroPlayBtn').onclick = function() {
+                openWatchView(item.id, item.media_type || 'movie', title);
+            };
+        }
+
+        function renderGrid(items, elementId) {
+            var grid = document.getElementById(elementId);
+            grid.innerHTML = '';
+            for(var i=0; i<items.length; i++) {
+                var item = items[i];
+                if(!item.poster_path) continue;
+                var title = item.title || item.name;
+                var card = document.createElement('div');
+                card.className = 'movie-card';
+                card.setAttribute('data-id', item.id);
+                card.setAttribute('data-type', item.media_type || 'movie');
+                card.setAttribute('data-title', title);
+                card.onclick = function() {
+                    openWatchView(this.getAttribute('data-id'), this.getAttribute('data-type'), this.getAttribute('data-title'));
+                };
+                card.innerHTML = '<img src="' + IMG_URL + item.poster_path + '" alt="' + title + '"><div class="movie-info"><div class="movie-name">' + title + '</div></div>';
+                grid.appendChild(card);
+            }
+        }
+
+        function openWatchView(id, type, title) {
+            currentId = id;
+            currentType = type === 'tv' ? 'tv' : 'movie';
+            currentTitle = title;
+            serverNum = 1;
+
+            document.getElementById('homeView').style.display = 'none';
+            document.getElementById('historySection').style.display = 'none';
+            document.getElementById('watchView').style.display = 'block';
+
+            document.getElementById('watchTitle').innerText = title;
+            document.getElementById('watchMeta').innerText = currentType.toUpperCase() + ' • HD Stream';
+
+            loadPlayer();
+            window.scrollTo(0, 0);
+            saveHistory(id, title, currentType);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', BASE_URL + '/' + currentType + '/' + currentId + '/recommendations?api_key=' + API_KEY, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if(data && data.results && data.results.length > 0) {
+                            renderGrid(data.results, 'recommendedGrid');
+                        }
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        }
+
+        function loadPlayer() {
+            var iframe = document.getElementById('videoPlayer');
+            var directBtn = document.getElementById('directWatchBtn');
+            var serverIndicator = document.getElementById('serverIndicator');
+            var lang = document.getElementById('langSelect').value;
+            
+            var targetUrl = '';
+            var serverName = '';
+
+            if(serverNum === 1) {
+                targetUrl = 'https://vidsrc.cc/v2/embed/' + currentType + '/' + currentId + '?sub=' + lang + '&audio=' + lang;
+                serverName = 'Server: VidSrc CC';
+            } else if(serverNum === 2) {
+                targetUrl = 'https://embed.su/embed/' + currentType + '/' + currentId;
+                serverName = 'Server: Embed.su';
+            } else {
+                targetUrl = 'https://vidsrc.to/embed/' + currentType + '/' + currentId + '?lang=' + lang;
+                serverName = 'Server: VidSrc TO';
+            }
+
+            iframe.src = targetUrl;
+            directBtn.href = targetUrl;
+            serverIndicator.innerText = serverName;
+        }
+
+        function switchServer() {
+            serverNum = (serverNum % 3) + 1;
+            loadPlayer();
+        }
+
+        function changeLanguage() {
+            if(currentId) loadPlayer();
+        }
+
+        function goHome() {
+            document.getElementById('watchView').style.display = 'none';
+            document.getElementById('historySection').style.display = 'none';
+            document.getElementById('homeView').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function handleSearch() {
+            var q = document.getElementById('searchInput').value;
+            if(q.length > 2) {
+                goHome();
+                var url = BASE_URL + '/search/multi?api_key=' + API_KEY + '&query=' + encodeURIComponent(q);
+                if(adultMode) url += '&include_adult=true';
+                
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            document.getElementById('gridTitle').innerText = "Search Results";
+                            if(data && data.results) renderGrid(data.results, 'moviesGrid');
+                        } catch(e) {}
+                    }
+                };
+                xhr.send();
+            } else if(q.length === 0) {
+                loadTrending(document.querySelector('.cat-chip'));
+            }
+        }
+
+        function fetchStudio(name, id) {
+            goHome();
+            document.getElementById('gridTitle').innerText = name + ' Showcase';
+            var url = BASE_URL + '/discover/movie?api_key=' + API_KEY + '&with_companies=' + id + '&sort_by=popularity.desc';
+            if(adultMode) url += '&include_adult=true';
+            fetchMovies(url);
+        }
+
+        function saveHistory(id, title, type) {
+            var hist = [];
+            try {
+                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            } catch(e) {}
+            
+            var filtered = [];
+            for(var i=0; i<hist.length; i++) {
+                if(hist[i].id !== id) filtered.push(hist[i]);
+            }
+            filtered.unshift({ id: id, title: title, type: type, date: new Date().toLocaleDateString() });
+            localStorage.setItem('omega_history', JSON.stringify(filtered));
+        }
+
+        function renderHistory() {
+            var list = document.getElementById('historyList');
+            var hist = [];
+            try {
+                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            } catch(e) {}
+            
+            list.innerHTML = hist.length === 0 ? '<p style="font-size:11px; color:#808080;">No history found.</p>' : '';
+            for(var i=0; i<hist.length; i++) {
+                var item = hist[i];
+                var div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = '<div style="cursor:pointer; flex:1;" onclick="openWatchView(' + item.id + ', \'' + item.type + '\', \'' + item.title + '\')"><div style="font-size:11px; font-weight:bold;">' + item.title + '</div><div style="font-size:9px; color:#808080;">' + item.type.toUpperCase() + ' • ' + item.date + '</div></div><button class="del-btn" onclick="deleteHistory(' + item.id + ')">Delete</button>';
+                list.appendChild(div);
+            }
+        }
+
+        function deleteHistory(id) {
+            var hist = [];
+            try {
+                hist = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            } catch(e) {}
+            
+            var filtered = [];
+            for(var i=0; i<hist.length; i++) {
+                if(hist[i].id !== id) filtered.push(hist[i]);
+            }
+            localStorage.setItem('omega_history', JSON.stringify(filtered));
+            renderHistory();
+        }
+
+        function switchTab(tab, el) {
+            if(el) {
+                var items 
