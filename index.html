@@ -1,1 +1,262 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega Stream</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #141414; color: #fff; font-family: Arial, sans-serif; padding-bottom: 70px; }
+        .navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #181818; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #282828; }
+        .logo { font-size: 16px; font-weight: bold; color: #e50914; cursor: pointer; letter-spacing: 1px; }
+        .search-container { position: relative; }
+        .search-box input { width: 180px; background: #262626; border: 1px solid #404040; padding: 8px 12px; border-radius: 4px; color: #fff; font-size: 12px; outline: none; }
+        .search-dropdown { position: absolute; top: 40px; right: 0; width: 260px; background: #1f1f1f; border: 1px solid #444; border-radius: 6px; z-index: 9999; max-height: 250px; overflow-y: auto; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.9); }
+        .search-suggestion-item { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid #2a2a2a; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+        .search-suggestion-item:hover { background: #333; }
+        .categories { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; background: #141414; scrollbar-width: none; }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-chip { background: #262626; color: #b3b3b3; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+        .cat-chip.active { background: #fff; color: #000; }
+        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 12px; padding: 10px 16px; }
+        .hero-slider::-webkit-scrollbar { display: none; }
+        .hero-banner { min-width: calc(100% - 32px); width: calc(100% - 32px); height: 320px; border-radius: 8px; overflow: hidden; position: relative; background: #000; scroll-snap-align: center; flex-shrink: 0; }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 30px 16px 16px; background: linear-gradient(transparent, rgba(20,20,20,0.98)); }
+        .hero-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #fff; }
+        .play-btn { background: #fff; color: #000; font-weight: bold; font-size: 11px; padding: 6px 14px; border-radius: 4px; display: inline-block; cursor: pointer; }
+        .section-title { margin: 18px 16px 8px; font-size: 13px; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 0 16px; margin-top: 8px; }
+        .movie-card { background: #1f1f1f; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #2a2a2a; }
+        .movie-card img { width: 100%; height: 190px; object-fit: cover; display: block; }
+        .movie-info { padding: 8px; }
+        .movie-name { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+        #watchView, #historySection, #settingsSection { display: none; padding: 16px; }
+        .back-btn { background: #262626; color: #fff; border: 1px solid #404040; padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-bottom: 14px; display: inline-block; }
+        .player-container { position: relative; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid #333; margin-bottom: 12px; }
+        .player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .watch-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .server-btn { background: #e50914; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; text-decoration: none; display: inline-block; text-align: center; }
+        .server-btn.secondary { background: #262626; border: 1px solid #404040; }
+        .history-item { display: flex; align-items: center; justify-content: space-between; background: #1f1f1f; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #2a2a2a; }
+        .del-btn { background: #e50914; color: #fff; border: none; padding: 6px 10px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #181818; border-top: 1px solid #282828; display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #808080; font-size: 10px; cursor: pointer; }
+        .nav-item.active { color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo" onclick="goHome()">OMEGA STREAM</div>
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search movies..." oninput="handleSearchInput()" autocomplete="off">
+            </div>
+            <div id="searchDropdown" class="search-dropdown"></div>
+        </div>
+    </div>
 
+    <div id="homeView">
+        <div class="categories">
+            <div class="cat-chip active" onclick="loadCat('trending', this)">Trending</div>
+            <div class="cat-chip" onclick="loadCat('bollywood', this)">Bollywood</div>
+            <div class="cat-chip" onclick="loadCat('hollywood', this)">Hollywood</div>
+            <div class="cat-chip" onclick="loadCat('south', this)">South Indian</div>
+            <div class="cat-chip" onclick="loadCat('netflix', this)">Netflix</div>
+            <div class="cat-chip" onclick="loadCat('anime', this)">Anime</div>
+        </div>
+        <div class="hero-slider" id="heroSlider"></div>
+        <div class="section-title" id="gridTitle">Trending Masterpieces</div>
+        <div class="movies-grid" id="moviesGrid"></div>
+    </div>
+
+    <div id="watchView">
+        <div class="back-btn" onclick="goHome()">← Back to Home</div>
+        <div class="player-container">
+            <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+        </div>
+        <div class="watch-controls">
+            <button class="server-btn secondary" onclick="switchServer()" id="serverIndicator">Server: VidSrc</button>
+            <a id="directWatchBtn" href="" target="_blank" class="server-btn">🚀 Open External</a>
+        </div>
+        <div style="font-size:16px; font-weight:bold; margin-bottom:6px;" id="watchTitle">Title</div>
+    </div>
+
+    <div id="historySection">
+        <div class="section-title" style="margin-left:0; margin-bottom:10px;">Watch History</div>
+        <div id="historyList"></div>
+    </div>
+
+    <div id="settingsSection">
+        <div class="section-title" style="margin-left:0; margin-bottom:10px;">Settings</div>
+        <button class="server-btn" onclick="localStorage.clear(); alert('Cleared!'); renderHistory();">Clear History</button>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home', this)"><span>🏠 Home</span></div>
+        <div class="nav-item" onclick="switchTab('history', this)"><span>📜 History</span></div>
+        <div class="nav-item" onclick="switchTab('midnight', this)"><span>🔥 Midnight</span></div>
+        <div class="nav-item" onclick="switchTab('settings', this)"><span>⚙️ Settings</span></div>
+    </div>
+
+    <script>
+        let currentId = null, serverNum = 1, currentList = [];
+        const db = {
+            trending: [
+                { id: 383498, title: "Deadpool & Wolverine", poster_path: "/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg", backdrop_path: "/y2Ca1neKKE2mGPMaHzLCNDWFqs4.jpg" },
+                { id: 299534, title: "Avengers: Endgame", poster_path: "/or06FN3Dka5tukK1e9sl16pB3iy.jpg", backdrop_path: "/7RyHsO4yDXtBv1zUU3mTpHeQ0dZ.jpg" },
+                { id: 157336, title: "Interstellar", poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", backdrop_path: "/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg" }
+            ],
+            bollywood: [
+                { id: 804095, title: "Pathaan", poster_path: "/mYm0vWpUIMuQCKapWv4L1B1Uf4U.jpg", backdrop_path: "/oo7gB4a4C97K3Uu06n8e0rL3J4d.jpg" },
+                { id: 934509, title: "Jawan", poster_path: "/jcwOsgaLkNoYuHNW2xYpWwWw.jpg", backdrop_path: "/qwOQcI9iC9W4Z6f5b9d2e1f4x3.jpg" }
+            ],
+            hollywood: [
+                { id: 693134, title: "Dune: Part Two", poster_path: "/8b8R8l8L8z0u1t2s3r4q5p6o7n.jpg", backdrop_path: "/xOMo8DxXtwGYiLz2H3X8t2Fv5yU.jpg" },
+                { id: 872585, title: "Oppenheimer", poster_path: "/8Gxv8gSFCU0Lq1Y8x8G3s4Z2X1.jpg", backdrop_path: "/fm6KqXpeK5J5u5s0b5j9z8r1c2.jpg" }
+            ],
+            south: [
+                { id: 579974, title: "RRR", poster_path: "/nEuhtMCvKzXMXCLf45dYV3fR9E1.jpg", backdrop_path: "/wV4V3j2w3u5t6y7u8i9o0p1a2s3.jpg" },
+                { id: 739343, title: "KGF Chapter 2", poster_path: "/kh1zU3j2u3o4p5l6k7j8h9g0f1d.jpg", backdrop_path: "/qw1e2r3t4y5u6i7o8p9a0s1d2f3.jpg" }
+            ],
+            netflix: [
+                { id: 973655, title: "Extraction 2", poster_path: "/7gKI9hpJ_CBesQHzJXDtlHh5U6F.jpg", backdrop_path: "/zzXfdcLbpWbCWL7H9nQ5wZ7m3f.jpg" }
+            ],
+            anime: [
+                { id: 129, title: "Spirited Away", poster_path: "/39wmItIWsg5sZMyRUUTkWBcuBPn.jpg", backdrop_path: "/f9zK8qN4yJ2w2d1m2n3v4c5x6z7.jpg" }
+            ],
+            midnight: [
+                { id: 348, title: "Alien", poster_path: "/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg", backdrop_path: "/g8aNqf05u4k1e1s2t3r4q5p6o7n.jpg" }
+            ]
+        };
+
+        loadCat('trending');
+
+        function loadCat(type, el) {
+            if(el) {
+                document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+                el.classList.add('active');
+            }
+            hideAll();
+            document.getElementById('homeView').style.display = 'block';
+            currentList = db[type] || db.trending;
+            renderSlider(currentList.slice(0, 3));
+            renderGrid(currentList, 'moviesGrid');
+        }
+
+        function renderSlider(items) {
+            const slider = document.getElementById('heroSlider');
+            slider.innerHTML = '';
+            items.forEach(item => {
+                let div = document.createElement('div');
+                div.className = 'hero-banner';
+                div.innerHTML = `<img class="hero-img" src="https://image.tmdb.org/t/p/w1280${item.backdrop_path}"><div class="hero-overlay"><div class="hero-title">${item.title}</div><div class="play-btn" onclick="openPlayer(${item.id})">▶ Play Now</div></div>`;
+                slider.appendChild(div);
+            });
+        }
+
+        function renderGrid(items, id) {
+            const grid = document.getElementById(id);
+            grid.innerHTML = '';
+            items.forEach(item => {
+                let card = document.createElement('div');
+                card.className = 'movie-card';
+                card.onclick = () => openPlayer(item.id);
+                card.innerHTML = `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}"><div class="movie-info"><div class="movie-name">${item.title}</div></div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function openPlayer(id) {
+            currentId = id;
+            serverNum = 1;
+            let item = Object.values(db).flat().find(m => m.id === id);
+            hideAll();
+            document.getElementById('watchView').style.display = 'block';
+            document.getElementById('watchTitle').innerText = item ? item.title : "Stream";
+            setServer();
+            saveHist(id, item ? item.title : "Stream");
+            window.scrollTo(0, 0);
+        }
+
+        function setServer() {
+            let url = serverNum === 1 ? `https://vidsrc.xyz/embed/movie?tmdb=${currentId}` : `https://multimbed.mov/directstream.php?video_id=${currentId}&tmdb=1`;
+            document.getElementById('videoPlayer').src = url;
+            document.getElementById('directWatchBtn').href = url;
+            document.getElementById('serverIndicator').innerText = serverNum === 1 ? 'Server: VidSrc' : 'Server: MultiEmbed';
+        }
+
+        function switchServer() {
+            serverNum = serverNum === 1 ? 2 : 1;
+            setServer();
+        }
+
+        function hideAll() {
+            ['homeView', 'watchView', 'historySection', 'settingsSection', 'searchDropdown'].forEach(id => {
+                let el = document.getElementById(id);
+                if(el) el.style.display = 'none';
+            });
+        }
+
+        function goHome() {
+            loadCat('trending');
+        }
+
+        function handleSearchInput() {
+            let q = document.getElementById('searchInput').value.toLowerCase();
+            let dd = document.getElementById('searchDropdown');
+            if(!q) { dd.style.display = 'none'; return; }
+            let all = Object.values(db).flat();
+            let matches = all.filter(m => m.title.toLowerCase().includes(q));
+            dd.innerHTML = '';
+            if(matches.length > 0) {
+                dd.style.display = 'block';
+                matches.forEach(m => {
+                    let d = document.createElement('div');
+                    d.className = 'search-suggestion-item';
+                    d.innerText = m.title;
+                    d.onclick = () => { document.getElementById('searchInput').value=''; dd.style.display='none'; openPlayer(m.id); };
+                    dd.appendChild(d);
+                });
+            } else { dd.style.display = 'none'; }
+        }
+
+        function saveHist(id, title) {
+            let h = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            h = h.filter(i => i.id !== id);
+            h.unshift({ id, title, date: new Date().toLocaleDateString() });
+            localStorage.setItem('omega_history', JSON.stringify(h));
+        }
+
+        function renderHistory() {
+            let list = document.getElementById('historyList');
+            let h = JSON.parse(localStorage.getItem('omega_history') || '[]');
+            list.innerHTML = h.length === 0 ? '<p style="font-size:11px; color:#808080;">No history found.</p>' : '';
+            h.forEach(i => {
+                let d = document.createElement('div');
+                d.className = 'history-item';
+                d.innerHTML = `<div onclick="openPlayer(${i.id})" style="cursor:pointer; flex:1;"><div style="font-size:11px; font-weight:bold;">${i.title}</div><div style="font-size:9px; color:#808080;">${i.date}</div></div><button class="del-btn" onclick="let h=JSON.parse(localStorage.getItem('omega_history')); h=h.filter(x=>x.id!==${i.id}); localStorage.setItem('omega_history', JSON.stringify(h)); renderHistory();">Delete</button>`;
+                list.appendChild(d);
+            });
+        }
+
+        function switchTab(tab, el) {
+            if(el) { document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+            hideAll();
+            if(tab === 'home') goHome();
+            else if(tab === 'history') { document.getElementById('historySection').style.display = 'block'; renderHistory(); }
+            else if(tab === 'settings') { document.getElementById('settingsSection').style.display = 'block'; }
+            else if(tab === 'midnight') {
+                let p = prompt("🔥 Enter Password (18+):");
+                if(p === "omega18") {
+                    document.getElementById('homeView').style.display = 'block';
+                    currentList = db.midnight;
+                    renderGrid(currentList, 'moviesGrid');
+                    document.getElementById('gridTitle').innerText = "🔥 Midnight Zone (18+)";
+                } else { alert("❌ Incorrect Password!"); }
+            }
+        }
+    </script>
+</body>
+  </html>
+  
